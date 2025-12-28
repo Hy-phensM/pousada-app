@@ -12,14 +12,17 @@
     background: linear-gradient(135deg, #0b0d10, #1a1c20);
     text-align: center;
     padding: 20px;
+    transition: background 1s;
   }
   #relogio {
     font-size: 3em;
     margin: 20px 0;
+    transition: transform 0.3s;
   }
   #frase {
     font-size: 1.5em;
     margin: 20px 0;
+    min-height: 40px;
   }
   #entrada {
     margin: 20px 0;
@@ -45,10 +48,12 @@
 <body>
 
 <h1>Pousada — Sistema Vivo</h1>
+
 <div id="relogio">00:00:00</div>
-<div id="frase">Bem-vindo! Informe se começou o turno.</div>
+<div id="frase">Bem-vindo! Digite seu nome e registre o turno.</div>
 
 <div id="entrada">
+  <input type="text" id="nome" placeholder="Seu nome">
   <input type="text" id="resposta" placeholder="Digite sim ou não">
   <button onclick="registrarEntrada()">Confirmar</button>
 </div>
@@ -56,42 +61,55 @@
 <div id="diasMes"></div>
 
 <script>
-// Funções para gerar frases
-function gerarFraseDia() {
-  const frases = [
-    "Tarde produtiva! Nada de cochilo 😎",
-    "Hora de encarar a rotina com ironia 😏",
-    "Mais café? Sempre cabe ☕",
-    "O tempo voa, mas você não ✨"
-  ];
-  return frases[Math.floor(Math.random()*frases.length)];
+const frasesTarde = [
+  "Tarde produtiva! Nada de cochilo 😎",
+  "Hora de encarar a rotina com ironia 😏",
+  "Mais café? Sempre cabe ☕",
+  "O tempo voa, mas você não ✨"
+];
+const frasesNoite = [
+  "Noite chegando, mente vazia ou cheia de planos? 🌙",
+  "Últimas horas, segure o tédio 💪",
+  "Cuidado com o sono, ele é traiçoeiro 😴",
+  "Falta pouco para o descanso, aguente firme ⚡"
+];
+let usadasTarde = [];
+let usadasNoite = [];
+
+// Escolhe frase sem repetir
+function gerarFrase(array, usadas) {
+  if (usadas.length === array.length) usadas = [];
+  let frase;
+  do {
+    frase = array[Math.floor(Math.random() * array.length)];
+  } while (usadas.includes(frase));
+  usadas.push(frase);
+  return frase;
 }
 
-function gerarFraseNoite() {
-  const frases = [
-    "Noite chegando, mente vazia ou cheia de planos? 🌙",
-    "Últimas horas, segure o tédio 💪",
-    "Cuidado com o sono, ele é traiçoeiro 😴",
-    "Falta pouco para o descanso, aguente firme ⚡"
-  ];
-  return frases[Math.floor(Math.random()*frases.length)];
-}
-
-// Registro de entrada
+// Registrar entrada
 function registrarEntrada() {
+  const nome = document.getElementById("nome").value.trim();
   const resp = document.getElementById("resposta").value.toLowerCase();
   const fraseArea = document.getElementById("frase");
+
+  if (!nome) {
+    fraseArea.textContent = "Digite seu nome antes! 😅";
+    return;
+  }
+
   if(resp === "sim") {
-    fraseArea.textContent = "Turno registrado! Boa sorte 😉";
+    fraseArea.textContent = `Turno registrado para ${nome}! Boa sorte 😉`;
   } else if(resp === "não") {
-    fraseArea.textContent = "Aguardando sua chegada... ⏳";
+    fraseArea.textContent = `${nome}, aguardando sua chegada... ⏳`;
   } else {
     fraseArea.textContent = "Digite apenas sim ou não 😅";
   }
+
   document.getElementById("resposta").value = "";
 }
 
-// Atualiza relógio, frases e contagem para próximo mês
+// Atualizar relógio, frases, fundo e dias para próximo mês
 function atualizar() {
   const agora = new Date();
   const hora = agora.getHours();
@@ -101,19 +119,25 @@ function atualizar() {
   // Relógio
   const relogio = document.getElementById("relogio");
   relogio.textContent = `${hora.toString().padStart(2,'0')}:${minuto.toString().padStart(2,'0')}:${segundo.toString().padStart(2,'0')}`;
+  relogio.style.transform = `rotate(${segundo*6}deg)`; // efeito de ponteiro
 
-  // Frases por horário
+  // Frases
   let frase = "";
   if(hora >= 14 && hora < 18) {
-    frase = gerarFraseDia();
+    frase = gerarFrase(frasesTarde, usadasTarde);
+    document.body.style.background = "linear-gradient(135deg, #0b0d10, #1a1c20)";
   } else if(hora === 18) {
     frase = "Hora da pausa! Volta às 19:00, relaxe 😎";
+    document.body.style.background = "linear-gradient(135deg, #1a1c20, #333)";
   } else if(hora === 19) {
     frase = "Fim da pausa! Hora de retomar o turno 💪";
+    document.body.style.background = "linear-gradient(135deg, #1a1c20, #444)";
   } else if(hora > 19 && hora < 22) {
-    frase = gerarFraseNoite();
+    frase = gerarFrase(frasesNoite, usadasNoite);
+    document.body.style.background = "linear-gradient(135deg, #000, #222)";
   } else {
     frase = "Fora do turno 💤";
+    document.body.style.background = "linear-gradient(135deg, #000, #111)";
   }
   document.getElementById("frase").textContent = frase;
 
