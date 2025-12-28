@@ -1,0 +1,8 @@
+{
+  "name": "Pousada — Sistema Vivo",
+  "short_name": "Pousada",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0d10",
+  "theme_color": "#ff3b3b"
+}

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pousada — Sistema Vivo</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff3b3b">
+
+<style>
+:root{
+  --bg:#0b0d10;
+  --fg:#e6e6e6;
+  --accent:#ff3b3b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui, Arial;
+  background:var(--bg);
+  color:var(--fg);
+}
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+}
+h1{
+  text-align:center;
+  font-size:1.1rem;
+  opacity:.85;
+}
+.clock{
+  width:200px;
+  height:200px;
+  border-radius:50%;
+  border:6px solid #222;
+  margin:20px auto;
+  position:relative;
+}
+.needle{
+  position:absolute;
+  width:2px;
+  height:90px;
+  background:var(--accent);
+  top:10px;
+  left:50%;
+  transform-origin:bottom;
+}
+.center{
+  position:absolute;
+  width:10px;
+  height:10px;
+  background:#fff;
+  border-radius:50%;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+.info{
+  text-align:center;
+  font-size:.9rem;
+}
+.frase{
+  text-align:center;
+  margin:18px 0;
+  min-height:60px;
+}
+input,button{
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border:none;
+  border-radius:8px;
+}
+button{
+  background:var(--accent);
+  color:#fff;
+  font-weight:600;
+}
+.log{
+  margin-top:10px;
+  font-size:.75rem;
+  opacity:.6;
+  max-height:120px;
+  overflow:auto;
+}
+.madrugada{
+  background:#020409;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Sistema Vivo — Pousada</h1>
+
+  <div class="clock">
+    <div class="needle" id="needle"></div>
+    <div class="center"></div>
+  </div>
+
+  <div class="info" id="timeInfo"></div>
+  <div class="frase" id="frase"></div>
+
+  <input id="chegou" placeholder="Já chegou? (sim ou não)">
+  <button id="btn">Confirmar</button>
+
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+const END_HOUR = 22;
+
+const frases = {
+  tarde:[
+    "A tarde ainda finge que vai ser tranquila.",
+    "O turno começou, mesmo sem você pedir.",
+    "A pousada observa em silêncio."
+  ],
+  noite:[
+    "A noite chegou antes da vontade.",
+    "Os corredores parecem mais longos.",
+    "A recepção não dorme."
+  ],
+  madrugada:[
+    "Nada aqui deveria estar acordado.",
+    "O sistema continua, mesmo sem plateia."
+  ]
+};
+
+let usadas = new Set(JSON.parse(localStorage.getItem("frases_usadas")||"[]"));
+
+function fase(h){
+  if(h < 18) return "tarde";
+  if(h < 22) return "noite";
+  return "madrugada";
+}
+
+function fraseNova(){
+  const f = fase(new Date().getHours());
+  const pool = frases[f].filter(x => !usadas.has(x));
+  if(pool.length === 0) return "Silêncio operacional.";
+  const t = pool[Math.floor(Math.random()*pool.length)];
+  usadas.add(t);
+  localStorage.setItem("frases_usadas", JSON.stringify([...usadas]));
+  return t;
+}
+
+function atualizar(){
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+
+  const rest = (END_HOUR*60)-(h*60+m);
+
+  document.getElementById("timeInfo").innerText =
+    `Agora: ${h}:${String(m).padStart(2,"0")} — faltam ${Math.max(rest,0)} min`;
+
+  document.getElementById("needle").style.transform =
+    `rotate(${(s/60)*360}deg)`;
+
+  document.getElementById("frase").innerText = fraseNova();
+
+  document.body.classList.toggle("madrugada", fase(h)==="madrugada");
+}
+
+document.getElementById("btn").onclick = () => {
+  const v = document.getElementById("chegou").value.toLowerCase();
+  const log = document.getElementById("log");
+  if(v === "sim") log.innerHTML += "<div>Entrada registrada.</div>";
+  if(v === "não") log.innerHTML += "<div>Sistema anotou o atraso.</div>";
+  document.getElementById("chegou").value = "";
+};
+
+setInterval(atualizar, 1000);
+atualizar();
+</script>
+</body>
+</html>
