@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Turno</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#0f0f0f,#1c1c1c);
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  transition: background 1s;
+}
+
+h1 { font-size: 1.8em; }
+#relogio { font-size: 3em; margin: 20px 0; }
+#estado { font-size: 1.4em; margin: 15px 0; }
+#contador { font-size: 1.2em; color: #aaa; }
+
+input {
+  padding: 10px;
+  font-size: 1em;
+  border-radius: 6px;
+  border: none;
+  margin-top: 10px;
+  width: 80%;
+  max-width: 300px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-size: 1em;
+  background: #ff3b3b;
+  color: white;
+}
+
+#nomeArea {
+  margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Sistema de Turno</h1>
+
+<div id="relogio">00:00:00</div>
+<div id="estado">Carregando...</div>
+<div id="contador"></div>
+
+<div id="nomeArea">
+  <input id="nome" placeholder="Digite seu nome">
+  <br>
+  <button onclick="salvarNome()">Salvar nome</button>
+</div>
+
+<script>
+const frasesAntes = [
+  "Ainda não começou. Aproveite o silêncio.",
+  "O turno vem aí. Prepare a mente.",
+  "O tempo passa mais devagar antes do caos."
+];
+
+const frasesTurno = [
+  "Turno ativo. Sobreviva.",
+  "Mais um dia dentro do sistema.",
+  "Respire. Ainda não acabou."
+];
+
+const frasesPausa = [
+  "Pausa oficial. Não pense em nada.",
+  "18:00 — cérebro desligado temporariamente.",
+  "Essa hora é sagrada."
+];
+
+const frasesFim = [
+  "Turno encerrado. Você venceu.",
+  "Sobreviveu por hoje.",
+  "Agora o tempo é seu."
+];
+
+function fraseAleatoria(lista) {
+  return lista[Math.floor(Math.random() * lista.length)];
+}
+
+function salvarNome() {
+  const nome = document.getElementById("nome").value.trim();
+  if(nome) {
+    localStorage.setItem("nomeUsuario", nome);
+    atualizar();
+  }
+}
+
+function atualizar() {
+  const agora = new Date();
+  const h = agora.getHours();
+  const m = agora.getMinutes();
+  const s = agora.getSeconds();
+
+  document.getElementById("relogio").textContent =
+    `${h.toString().padStart(2,"0")}:${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;
+
+  const nome = localStorage.getItem("nomeUsuario") || "Visitante";
+
+  let estado = "";
+  let contador = "";
+
+  const inicio = new Date();
+  inicio.setHours(14,0,0,0);
+
+  const pausaIni = new Date();
+  pausaIni.setHours(18,0,0,0);
+
+  const pausaFim = new Date();
+  pausaFim.setHours(19,0,0,0);
+
+  const fim = new Date();
+  fim.setHours(22,0,0,0);
+
+  if (agora < inicio) {
+    estado = fraseAleatoria(frasesAntes);
+    contador = `Faltam ${Math.ceil((inicio-agora)/60000)} minutos para o turno`;
+    document.body.style.background = "linear-gradient(135deg,#0f0f0f,#1c1c1c)";
+  }
+  else if (agora >= inicio && agora < pausaIni) {
+    estado = `${nome}, ${fraseAleatoria(frasesTurno)}`;
+    contador = `Faltam ${Math.ceil((pausaIni-agora)/60000)} minutos para a pausa`;
+    document.body.style.background = "linear-gradient(135deg,#141414,#222)";
+  }
+  else if (agora >= pausaIni && agora < pausaFim) {
+    estado = fraseAleatoria(frasesPausa);
+    contador = `Pausa termina em ${Math.ceil((pausaFim-agora)/60000)} minutos`;
+    document.body.style.background = "linear-gradient(135deg,#333,#111)";
+  }
+  else if (agora >= pausaFim && agora < fim) {
+    estado = `${nome}, reta final.`;
+    contador = `Faltam ${Math.ceil((fim-agora)/60000)} minutos para encerrar`;
+    document.body.style.background = "linear-gradient(135deg,#000,#222)";
+  }
+  else {
+    estado = fraseAleatoria(frasesFim);
+    contador = "Fora do turno";
+    document.body.style.background = "linear-gradient(135deg,#000,#000)";
+  }
+
+  document.getElementById("estado").textContent = estado;
+  document.getElementById("contador").textContent = contador;
+}
+
+setInterval(atualizar,1000);
+atualizar();
+</script>
+
+</body>
+</html>
