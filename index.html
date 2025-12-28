@@ -3,161 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Turno</title>
+<title>TURNO</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#111">
+<meta name="theme-color" content="#000000">
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg,#0f0f0f,#1c1c1c);
-  color: #fff;
-  text-align: center;
-  padding: 20px;
-  transition: background 1s;
+body{
+  margin:0;
+  font-family: monospace;
+  background:#000;
+  color:#fff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
-
-h1 { font-size: 1.8em; }
-#relogio { font-size: 3em; margin: 20px 0; }
-#estado { font-size: 1.4em; margin: 15px 0; }
-#contador { font-size: 1.2em; color: #aaa; }
-
-input {
-  padding: 10px;
-  font-size: 1em;
-  border-radius: 6px;
-  border: none;
-  margin-top: 10px;
-  width: 80%;
-  max-width: 300px;
+#game{
+  width:92%;
+  max-width:420px;
+  text-align:center;
 }
-
-button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  border-radius: 6px;
-  border: none;
-  font-size: 1em;
-  background: #ff3b3b;
-  color: white;
+#clock{font-size:2.6em;}
+#gauge{
+  margin:15px 0;
+  width:100%;
+  height:12px;
+  background:#222;
+  border-radius:6px;
+  overflow:hidden;
 }
-
-#nomeArea {
-  margin-top: 20px;
+#gaugeFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#ff0033,#ff6600);
+  transition:width 1s linear;
 }
+#text{
+  min-height:90px;
+  margin:15px 0;
+  opacity:.9;
+}
+button,input{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  background:#111;
+  color:#fff;
+  border:1px solid #333;
+}
+button:hover{background:#222;}
+small{opacity:.6}
 </style>
 </head>
 
 <body>
 
-<h1>Sistema de Turno</h1>
+<div id="game">
+  <div id="clock"></div>
+  <div id="gauge"><div id="gaugeFill"></div></div>
+  <div id="text"></div>
 
-<div id="relogio">00:00:00</div>
-<div id="estado">Carregando...</div>
-<div id="contador"></div>
+  <input id="nameInput" placeholder="Seu nome">
+  <button id="startBtn">Iniciar turno</button>
 
-<div id="nomeArea">
-  <input id="nome" placeholder="Digite seu nome">
-  <br>
-  <button onclick="salvarNome()">Salvar nome</button>
+  <div id="choices" style="display:none">
+    <button onclick="act(0)">Ignorar</button>
+    <button onclick="act(1)">Pensar demais</button>
+    <button onclick="act(2)">Surtar em silêncio</button>
+  </div>
+
+  <small id="status"></small>
 </div>
 
 <script>
-const frasesAntes = [
-  "Ainda não começou. Aproveite o silêncio.",
-  "O turno vem aí. Prepare a mente.",
-  "O tempo passa mais devagar antes do caos."
-];
+let state={
+  name:localStorage.getItem("name")||"",
+  sanity:Number(localStorage.getItem("sanity"))||100,
+  day:Number(localStorage.getItem("day"))||1,
+  started:false,
+  used:[]
+};
 
-const frasesTurno = [
-  "Turno ativo. Sobreviva.",
-  "Mais um dia dentro do sistema.",
-  "Respire. Ainda não acabou."
-];
+const pools={
+  work:[
+    "O relógio parece te observar.",
+    "O silêncio pesa.",
+    "Você sente que já viveu isso.",
+    "Nada acontece. Isso é o problema.",
+    "O tempo não colabora."
+  ],
+  pause:[
+    "Pausa. O corpo existe.",
+    "18h. O mundo desacelera.",
+    "Você esquece quem é por 1 minuto."
+  ],
+  end:[
+    "Turno encerrado.",
+    "Você sobreviveu.",
+    "A noite aceita você."
+  ]
+};
 
-const frasesPausa = [
-  "Pausa oficial. Não pense em nada.",
-  "18:00 — cérebro desligado temporariamente.",
-  "Essa hora é sagrada."
-];
-
-const frasesFim = [
-  "Turno encerrado. Você venceu.",
-  "Sobreviveu por hoje.",
-  "Agora o tempo é seu."
-];
-
-function fraseAleatoria(lista) {
-  return lista[Math.floor(Math.random() * lista.length)];
+function unique(pool){
+  let list=pools[pool].filter(x=>!state.used.includes(x));
+  if(!list.length){state.used=[];list=pools[pool]}
+  const msg=list[Math.floor(Math.random()*list.length)];
+  state.used.push(msg);
+  return msg;
 }
 
-function salvarNome() {
-  const nome = document.getElementById("nome").value.trim();
-  if(nome) {
-    localStorage.setItem("nomeUsuario", nome);
-    atualizar();
-  }
+const text=e=>document.getElementById("text").textContent=e;
+const status=e=>document.getElementById("status").textContent=e;
+
+document.getElementById("nameInput").value=state.name;
+
+document.getElementById("startBtn").onclick=()=>{
+  const n=document.getElementById("nameInput").value.trim();
+  if(!n)return;
+  state.name=n;
+  state.started=true;
+  localStorage.setItem("name",n);
+  document.getElementById("nameInput").style.display="none";
+  document.getElementById("startBtn").style.display="none";
+  document.getElementById("choices").style.display="block";
+  text(`Dia ${state.day}. Turno iniciado, ${n}.`);
+};
+
+function act(i){
+  if(i===1)state.sanity-=4;
+  if(i===2)state.sanity-=8;
+  save();
+  text(unique("work"));
 }
 
-function atualizar() {
-  const agora = new Date();
-  const h = agora.getHours();
-  const m = agora.getMinutes();
-  const s = agora.getSeconds();
-
-  document.getElementById("relogio").textContent =
-    `${h.toString().padStart(2,"0")}:${m.toString().padStart(2,"0")}:${s.toString().padStart(2,"0")}`;
-
-  const nome = localStorage.getItem("nomeUsuario") || "Visitante";
-
-  let estado = "";
-  let contador = "";
-
-  const inicio = new Date();
-  inicio.setHours(14,0,0,0);
-
-  const pausaIni = new Date();
-  pausaIni.setHours(18,0,0,0);
-
-  const pausaFim = new Date();
-  pausaFim.setHours(19,0,0,0);
-
-  const fim = new Date();
-  fim.setHours(22,0,0,0);
-
-  if (agora < inicio) {
-    estado = fraseAleatoria(frasesAntes);
-    contador = `Faltam ${Math.ceil((inicio-agora)/60000)} minutos para o turno`;
-    document.body.style.background = "linear-gradient(135deg,#0f0f0f,#1c1c1c)";
-  }
-  else if (agora >= inicio && agora < pausaIni) {
-    estado = `${nome}, ${fraseAleatoria(frasesTurno)}`;
-    contador = `Faltam ${Math.ceil((pausaIni-agora)/60000)} minutos para a pausa`;
-    document.body.style.background = "linear-gradient(135deg,#141414,#222)";
-  }
-  else if (agora >= pausaIni && agora < pausaFim) {
-    estado = fraseAleatoria(frasesPausa);
-    contador = `Pausa termina em ${Math.ceil((pausaFim-agora)/60000)} minutos`;
-    document.body.style.background = "linear-gradient(135deg,#333,#111)";
-  }
-  else if (agora >= pausaFim && agora < fim) {
-    estado = `${nome}, reta final.`;
-    contador = `Faltam ${Math.ceil((fim-agora)/60000)} minutos para encerrar`;
-    document.body.style.background = "linear-gradient(135deg,#000,#222)";
-  }
-  else {
-    estado = fraseAleatoria(frasesFim);
-    contador = "Fora do turno";
-    document.body.style.background = "linear-gradient(135deg,#000,#000)";
-  }
-
-  document.getElementById("estado").textContent = estado;
-  document.getElementById("contador").textContent = contador;
+function save(){
+  localStorage.setItem("sanity",state.sanity);
+  localStorage.setItem("day",state.day);
 }
 
-setInterval(atualizar,1000);
-atualizar();
+function update(){
+  const now=new Date();
+  document.getElementById("clock").textContent=now.toLocaleTimeString();
+
+  const start=new Date();start.setHours(14,0,0,0);
+  const pauseS=new Date();pauseS.setHours(18,0,0,0);
+  const pauseE=new Date();pauseE.setHours(19,0,0,0);
+  const end=new Date();end.setHours(22,0,0,0);
+
+  if(now<start){
+    text(`Faltam ${Math.ceil((start-now)/60000)} min para o turno.`);
+    return;
+  }
+
+  if(!state.started)return;
+
+  if(now>=pauseS&&now<pauseE){
+    text(unique("pause"));
+  }
+  else if(now>=end){
+    text(unique("end")+` Dia ${state.day} concluído.`);
+    state.day++;
+    state.started=false;
+    save();
+    document.getElementById("choices").style.display="none";
+  }
+  else{
+    text(unique("work"));
+  }
+
+  const prog=Math.min(100,Math.max(0,((now-start)/(end-start))*100));
+  document.getElementById("gaugeFill").style.width=prog+"%";
+  status(`Sanidade: ${state.sanity}% • Dia ${state.day}`);
+}
+
+setInterval(update,1000);
+update();
 </script>
 
 </body>
